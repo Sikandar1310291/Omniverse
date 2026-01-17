@@ -1,0 +1,49 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const BLACKBOX_API_KEY = "sk-8MxbHfK-IL6MIAgzWaK1Uw";
+
+Deno.serve(async (req) => {
+    // Handle CORS
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST',
+                'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+            }
+        });
+    }
+
+    try {
+        const { messages } = await req.json();
+
+        const response = await fetch('https://api.blackbox.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${BLACKBOX_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messages,
+                model: 'deepseek-ai/DeepSeek-V3', // Default or from request
+            }),
+        });
+
+        const data = await response.json();
+
+        return new Response(JSON.stringify(data), {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+        });
+    }
+});
